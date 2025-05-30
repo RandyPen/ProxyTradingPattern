@@ -92,4 +92,6 @@ public fun bot_deposit<T>(
 }
 ```
 
+In the `bot_deposit` function, there is also a `min` parameter, which can be used to check for slippage in the returned trade results.
+
 For the actual contract code, you can refer to [vault.move](../example_projects/proxy/sources/vault.move).
