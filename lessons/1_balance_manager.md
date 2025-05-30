@@ -4,7 +4,7 @@
 
 `BalanceManager` is a data structure for users to store assets. Each user can have a unique `BalanceManager`, which can hold assets of any coins. For permission management, it records the `owner` info, allowing only the `owner` to deposit and withdraw assets.
 
-```rust
+```move
 public struct BalanceManager has key {
     id: UID,
     owner: address,
@@ -15,7 +15,7 @@ public struct BalanceManager has key {
 
 To prevent a single address from creating multiple `BalanceManager` objects and causing account chaos, a global `Record` is created first. This `Record` stores the correspondence between each `address` and the `ID` of their `BalanceManager`.
 
-```rust
+```move
 public struct Record has key {
     id: UID,
     record: Table<address, ID>,
@@ -23,7 +23,7 @@ public struct Record has key {
 ```
 The corresponding `init` function is as follows:
 
-```rust
+```move
 fun init(ctx: &mut TxContext) {
     let record = Record {
         id: object::new(ctx),
@@ -35,7 +35,7 @@ fun init(ctx: &mut TxContext) {
 
 Function for creating `BalanceManager`:
 
-```rust
+```move
 public fun create_balance_manager_non_entry(
     r: &mut Record,
     ctx: &mut TxContext,
@@ -65,7 +65,7 @@ public fun create_balance_manager(
 Since a single `BalanceManager` may store multiple types of `Coin`, `dynamic_field` and generic `T` are used.
 When operating on `Coin<T>`, use `type_name::into_string` to read the name of the generic `T` as the Name for `dynamic_field`. Then get the reference to `Balance<T>` corresponding to the generic `T` and perform further operations.
 
-```rust
+```move
 use std::{
     type_name,
     ascii::String
@@ -109,7 +109,7 @@ fun deposit_non_entry<T>(
 
 When users deposit or withdraw assets, permission checks are performed to ensure the `BalanceManager` belongs to them.
 
-```rust
+```move
 public fun user_deposit<T>(
     bm: &mut BalanceManager,
     budget: Coin<T>,
@@ -169,7 +169,7 @@ fun init(ctx: &mut TxContext) {
 Add version checks to the functions:
 
 ```rust
-public fun user_deposit<T>(
+entry fun user_deposit<T>(
     bm: &mut BalanceManager,
     budget: Coin<T>,
     version: &Version,

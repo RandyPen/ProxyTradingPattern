@@ -6,7 +6,7 @@ The next step is to allow trading bots to operate on users' `BalanceManager`. Th
 
 Define the `AccessList` data structure for recording permitted trading addresses and the `AdminCap` for operating on `AccessList`. Since the whitelist addresses are usually few, using `VecSet` for recording is more convenient.
 
-```rust
+```move
 use sui::{
     vec_set::{Self, VecSet}
 };
@@ -27,7 +27,7 @@ public struct AdminCap has key, store {
 
 Initialize the `AdminCap` and `AccessList` data structures. The `AdminCap` will be sent to the contract deployer when deploying the contract, serving as the administrator's authority, the `AccessList` will be shared as a `share_object`.
 
-```rust
+```move
 fun init(ctx: &mut TxContext) {
     let admin_cap = AdminCap {
         id: object::new(ctx),
@@ -46,18 +46,18 @@ fun init(ctx: &mut TxContext) {
 
 Allow editing of the `AccessList` using the `AdminCap`.
 
-```rust
+```move
 public fun acl_add(
-    _: &AdminCap,
     acl: &mut AccessList,
+    _: &AdminCap,
     bot_address: address,
 ) {
     acl.allow.insert(bot_address);
 }
 
 public fun acl_remove(
-    _: &AdminCap,
     acl: &mut AccessList,
+    _: &AdminCap,
     bot_address: address,
 ) {
     acl.allow.remove(&bot_address);
@@ -68,7 +68,7 @@ public fun acl_remove(
 
 Provide `bot_withdraw` and `bot_deposit` functions to be called by bots, which include the permission check `acl.allow.contains(&ctx.sender())`.
 
-```rust
+```move
 public fun bot_withdraw<T>(
     acl: &AccessList,
     bm: &mut BalanceManager,

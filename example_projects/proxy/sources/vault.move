@@ -69,16 +69,16 @@ fun init(ctx: &mut TxContext) {
 }
 
 public fun acl_add(
-    _: &AdminCap,
     acl: &mut AccessList,
+    _: &AdminCap,
     bot_address: address,
 ) {
     acl.allow.insert(bot_address);
 }
 
 public fun acl_remove(
-    _: &AdminCap,
     acl: &mut AccessList,
+    _: &AdminCap,
     bot_address: address,
 ) {
     acl.allow.remove(&bot_address);
@@ -122,7 +122,7 @@ public fun user_deposit<T>(
     deposit_non_entry<T>(bm, budget);
 }
 
-public entry fun user_withdraw<T>(
+entry fun user_withdraw<T>(
     bm: &mut BalanceManager,
     amount: u64,
     version: &Version,

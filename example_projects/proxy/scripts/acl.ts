@@ -22,8 +22,8 @@ tx.moveCall({
     module: "vault",
     function: "create_balance_manager",
     arguments: [
-        tx.object(adminCapId),
         tx.object(accessListId),
+        tx.object(adminCapId),
         tx.pure(bcs.Address.serialize(botAddress).toBytes()),
     ],
 });
