@@ -76,23 +76,22 @@ use sui::{
     dynamic_field
 };
 
-fun withdraw_non_entry<T>(
+fun withdraw_private<T>(
     bm: &mut BalanceManager,
     amount: u64,
     ctx: &mut TxContext,
 ): Coin<T> {
     let coin_type = type_name::into_string(type_name::get_with_original_ids<T>());
     let balance_bm = dynamic_field::borrow_mut<String, Balance<T>>(&mut bm.id, coin_type);
-    let balance = if (balance::value<T>(balance_bm) == amount) {
+    let balance = if (balance_bm.value() == amount) {
         dynamic_field::remove<String, Balance<T>>(&mut bm.id, coin_type)
     } else {
-        balance::split<T>(balance_bm, amount)
+        balance_bm.split(amount)
     };
-    let coin = coin::from_balance<T>(balance, ctx);
-    coin
+    balance.into_coin(ctx)
 }
 
-fun deposit_non_entry<T>(
+fun deposit_private<T>(
     bm: &mut BalanceManager,
     budget: Coin<T>,
 ) {
@@ -101,7 +100,7 @@ fun deposit_non_entry<T>(
         let balance_bm = dynamic_field::borrow_mut<String, Balance<T>>(&mut bm.id, coin_type);
         coin::put<T>(balance_bm, budget);
     } else {
-        let balance_t = coin::into_balance<T>(budget);
+        let balance_t = budget.into_balance();
         dynamic_field::add<String, Balance<T>>(&mut bm.id, coin_type, balance_t);
     };
 }
@@ -116,7 +115,7 @@ public fun user_deposit<T>(
     ctx: &TxContext,
 ) {
     assert!(bm.owner == ctx.sender());
-    deposit_non_entry<T>(bm, budget);
+    deposit_private<T>(bm, budget);
 }
 
 #[allow(lint(self_transfer))]
@@ -126,7 +125,7 @@ public fun user_withdraw<T>(
     ctx: &mut TxContext,
 ) {
     assert!(bm.owner == ctx.sender());
-    let coin = withdraw_non_entry<T>(bm, amount, ctx);
+    let coin = withdraw_private<T>(bm, amount, ctx);
     transfer::public_transfer(coin, ctx.sender());
 }
 ```
@@ -136,12 +135,12 @@ public fun user_withdraw<T>(
 ### Query
 
 To facilitate data retrieval, a `query` function interface for querying various `Balance<T>` is added.
-```rust
+```move
 public fun query<T>(bm: &mut BalanceManager): u64 {
     let coin_type = type_name::into_string(type_name::get_with_original_ids<T>());
     if (dynamic_field::exists_(&bm.id, coin_type)) {
         let balance_b = dynamic_field::borrow<String, Balance<T>>(&bm.id, coin_type);
-        balance::value<T>(balance_b)
+        balance_b.value()
     } else {
         0
     }
@@ -152,7 +151,7 @@ public fun query<T>(bm: &mut BalanceManager): u64 {
 
 For version control purposes:
 
-```rust
+```move
 const VERSION: u64 = 1;
 
 const EVersionMismatched: u64 = 1002;
@@ -168,8 +167,8 @@ fun init(ctx: &mut TxContext) {
 
 Add version checks to the functions:
 
-```rust
-entry fun user_deposit<T>(
+```move
+public fun user_deposit<T>(
     bm: &mut BalanceManager,
     budget: Coin<T>,
     version: &Version,
@@ -177,7 +176,7 @@ entry fun user_deposit<T>(
 ) {
     assert!(version.version == VERSION, EVersionMismatched);
     assert!(bm.owner == ctx.sender());
-    deposit_non_entry<T>(bm, budget);
+    deposit_private<T>(bm, budget);
 }
 ```
 

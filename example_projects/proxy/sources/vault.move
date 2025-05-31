@@ -8,7 +8,7 @@ use std::{
 use sui::{
     coin::{Self, Coin},
     table::{Self, Table},
-    balance::{Self, Balance},
+    balance::Balance,
     vec_set::{Self, VecSet},
     dynamic_field
 };
@@ -119,7 +119,7 @@ public fun user_deposit<T>(
 ) {
     assert!(version.version == VERSION, EVersionMismatched);
     assert!(bm.owner == ctx.sender());
-    deposit_non_entry<T>(bm, budget);
+    deposit_private<T>(bm, budget);
 }
 
 entry fun user_withdraw<T>(
@@ -130,7 +130,7 @@ entry fun user_withdraw<T>(
 ) {
     assert!(version.version == VERSION, EVersionMismatched);
     assert!(bm.owner == ctx.sender());
-    let coin = withdraw_non_entry<T>(bm, amount, ctx);
+    let coin = withdraw_private<T>(bm, amount, ctx);
     transfer::public_transfer(coin, ctx.sender());
 }
 
@@ -141,7 +141,7 @@ public fun bot_withdraw<T>(
     ctx: &mut TxContext,
 ): Coin<T> {
     assert!(acl.allow.contains(&ctx.sender()), ENotWhitelisted);
-    withdraw_non_entry<T>(bm, amount, ctx)
+    withdraw_private<T>(bm, amount, ctx)
 }
 
 public fun bot_deposit<T>(
@@ -153,26 +153,25 @@ public fun bot_deposit<T>(
 ) {
     assert!(acl.allow.contains(&ctx.sender()), ENotWhitelisted);
     assert!(budget.value() >= min);
-    deposit_non_entry<T>(bm, budget);
+    deposit_private<T>(bm, budget);
 }
 
-fun withdraw_non_entry<T>(
+fun withdraw_private<T>(
     bm: &mut BalanceManager,
     amount: u64,
     ctx: &mut TxContext,
 ): Coin<T> {
     let coin_type = type_name::into_string(type_name::get_with_original_ids<T>());
     let balance_bm = dynamic_field::borrow_mut<String, Balance<T>>(&mut bm.id, coin_type);
-    let balance = if (balance::value<T>(balance_bm) == amount) {
+    let balance = if (balance_bm.value() == amount) {
         dynamic_field::remove<String, Balance<T>>(&mut bm.id, coin_type)
     } else {
-        balance::split<T>(balance_bm, amount)
+        balance_bm.split(amount)
     };
-    let coin = coin::from_balance<T>(balance, ctx);
-    coin
+    balance.into_coin(ctx)
 }
 
-fun deposit_non_entry<T>(
+fun deposit_private<T>(
     bm: &mut BalanceManager,
     budget: Coin<T>,
 ) {
@@ -181,7 +180,7 @@ fun deposit_non_entry<T>(
         let balance_bm = dynamic_field::borrow_mut<String, Balance<T>>(&mut bm.id, coin_type);
         coin::put<T>(balance_bm, budget);
     } else {
-        let balance_t = coin::into_balance<T>(budget);
+        let balance_t = budget.into_balance();
         dynamic_field::add<String, Balance<T>>(&mut bm.id, coin_type, balance_t);
     };
 }
@@ -190,7 +189,7 @@ public fun query<T>(bm: &mut BalanceManager): u64 {
     let coin_type = type_name::into_string(type_name::get_with_original_ids<T>());
     if (dynamic_field::exists_(&bm.id, coin_type)) {
         let balance_b = dynamic_field::borrow<String, Balance<T>>(&bm.id, coin_type);
-        balance::value<T>(balance_b)
+        balance_b.value()
     } else {
         0
     }

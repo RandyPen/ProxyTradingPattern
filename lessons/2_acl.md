@@ -76,7 +76,7 @@ public fun bot_withdraw<T>(
     ctx: &mut TxContext,
 ): Coin<T> {
     assert!(acl.allow.contains(&ctx.sender()), ENotWhitelisted);
-    withdraw_non_entry<T>(bm, amount, ctx)
+    withdraw_private<T>(bm, amount, ctx)
 }
 
 public fun bot_deposit<T>(
@@ -88,7 +88,7 @@ public fun bot_deposit<T>(
 ) {
     assert!(acl.allow.contains(&ctx.sender()), ENotWhitelisted);
     assert!(budget.value() >= min);
-    deposit_non_entry<T>(bm, budget);
+    deposit_private<T>(bm, budget);
 }
 ```
 
