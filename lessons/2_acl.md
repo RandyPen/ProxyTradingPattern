@@ -69,6 +69,8 @@ public fun acl_remove(
 Provide `bot_withdraw` and `bot_deposit` functions to be called by bots, which include the permission check `acl.allow.contains(&ctx.sender())`.
 
 ```move
+const ESlippage: u64           = 1004;
+
 public fun bot_withdraw<T>(
     acl: &AccessList,
     bm: &mut BalanceManager,
@@ -76,7 +78,7 @@ public fun bot_withdraw<T>(
     ctx: &mut TxContext,
 ): Coin<T> {
     assert!(acl.allow.contains(&ctx.sender()), ENotWhitelisted);
-    withdraw_private<T>(bm, amount, ctx)
+    do_withdraw<T>(bm, amount, ctx)
 }
 
 public fun bot_deposit<T>(
@@ -87,8 +89,8 @@ public fun bot_deposit<T>(
     ctx: &TxContext,
 ) {
     assert!(acl.allow.contains(&ctx.sender()), ENotWhitelisted);
-    assert!(budget.value() >= min);
-    deposit_private<T>(bm, budget);
+    assert!(budget.value() >= min, ESlippage);
+    do_deposit<T>(bm, budget);
 }
 ```
 

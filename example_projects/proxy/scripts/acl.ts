@@ -20,7 +20,7 @@ const tx = new Transaction();
 tx.moveCall({
     package: process.env.PACKAGE!,
     module: "vault",
-    function: "create_balance_manager",
+    function: "acl_add",
     arguments: [
         tx.object(accessListId),
         tx.object(adminCapId),
