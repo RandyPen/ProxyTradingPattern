@@ -1,18 +1,12 @@
 module proxy::vault;
 
-
-use std::{
-    type_name,
-    ascii::String
-};
-use sui::{
-    coin::{Self, Coin},
-    table::{Self, Table},
-    balance::Balance,
-    vec_set::{Self, VecSet},
-    dynamic_field
-};
-
+use std::ascii::String;
+use std::type_name;
+use sui::balance::Balance;
+use sui::coin::{Self, Coin};
+use sui::dynamic_field;
+use sui::table::{Self, Table};
+use sui::vec_set::{Self, VecSet};
 
 const VERSION: u64 = 1;
 
@@ -68,19 +62,11 @@ fun init(ctx: &mut TxContext) {
     transfer::share_object(version);
 }
 
-public fun acl_add(
-    acl: &mut AccessList,
-    _: &AdminCap,
-    bot_address: address,
-) {
+public fun acl_add(acl: &mut AccessList, _: &AdminCap, bot_address: address) {
     acl.allow.insert(bot_address);
 }
 
-public fun acl_remove(
-    acl: &mut AccessList,
-    _: &AdminCap,
-    bot_address: address,
-) {
+public fun acl_remove(acl: &mut AccessList, _: &AdminCap, bot_address: address) {
     acl.allow.remove(&bot_address);
 }
 
@@ -98,15 +84,11 @@ public fun create_balance_manager_non_entry(
     balance_manager
 }
 
-public fun create_balance_manager(
-    r: &mut Record,
-    version: &Version,
-    ctx: &mut TxContext,
-) {
+public fun create_balance_manager(r: &mut Record, version: &Version, ctx: &mut TxContext) {
     let balance_manager = create_balance_manager_non_entry(
         r,
         version,
-        ctx
+        ctx,
     );
     transfer::share_object(balance_manager);
 }
@@ -156,11 +138,7 @@ public fun bot_deposit<T>(
     deposit_private<T>(bm, budget);
 }
 
-fun withdraw_private<T>(
-    bm: &mut BalanceManager,
-    amount: u64,
-    ctx: &mut TxContext,
-): Coin<T> {
+fun withdraw_private<T>(bm: &mut BalanceManager, amount: u64, ctx: &mut TxContext): Coin<T> {
     let coin_type = type_name::into_string(type_name::get_with_original_ids<T>());
     let balance_bm = dynamic_field::borrow_mut<String, Balance<T>>(&mut bm.id, coin_type);
     let balance = if (balance_bm.value() == amount) {
@@ -171,10 +149,7 @@ fun withdraw_private<T>(
     balance.into_coin(ctx)
 }
 
-fun deposit_private<T>(
-    bm: &mut BalanceManager,
-    budget: Coin<T>,
-) {
+fun deposit_private<T>(bm: &mut BalanceManager, budget: Coin<T>) {
     let coin_type = type_name::into_string(type_name::get_with_original_ids<T>());
     if (dynamic_field::exists_(&bm.id, coin_type)) {
         let balance_bm = dynamic_field::borrow_mut<String, Balance<T>>(&mut bm.id, coin_type);
@@ -195,9 +170,6 @@ public fun query<T>(bm: &mut BalanceManager): u64 {
     }
 }
 
-public fun update_version(
-    version: &mut Version,
-) {
+public fun update_version(version: &mut Version) {
     version.version == VERSION;
 }
-
